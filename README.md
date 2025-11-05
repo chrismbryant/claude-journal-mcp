@@ -1,6 +1,8 @@
-# Claude Journal MCP Server
+# Claude Journal - Claude Code Plugin
 
 A lightweight journal/memory system for Claude Code with no ML dependencies. Uses simple SQLite for fast, local storage.
+
+This is a full-featured Claude Code plugin with slash commands, skills, an agent, and auto-capture hooks.
 
 ## Features
 
@@ -9,18 +11,37 @@ A lightweight journal/memory system for Claude Code with no ML dependencies. Use
 - ✅ **Smart Search**: Full-text search across titles, descriptions, tags
 - ✅ **Time Queries**: Natural language like "last month", "yesterday"
 - ✅ **Project Tracking**: Organize entries by repository/project
-- ✅ **Auto-Capture**: Automatic and context-based journaling
+- ✅ **Auto-Capture**: Automatic periodic journaling via hooks
 - ✅ **Import/Export**: Share journal between instances
 - ✅ **Flexible Tags**: Organize with custom tags
+- ✅ **Slash Commands**: 6 user-friendly commands for common operations
+- ✅ **Skills**: 3 proactive AI skills for context recovery and smart capture
+- ✅ **Agent**: Optional journal assistant for enhanced workflows
 
 ## Installation
 
+### As a Plugin (Recommended)
+
+1. Clone and install:
 ```bash
-cd ~/claude-journal-mcp
+git clone https://github.com/chrismbryant/claude-journal-mcp.git
+cd claude-journal-mcp
 pip install -e .
 ```
 
-## Configuration
+2. Install the plugin:
+```bash
+claude /plugin install .
+```
+
+This automatically:
+- Configures the MCP server
+- Registers slash commands
+- Enables skills
+- Sets up auto-capture hooks
+- Prompts you to enable the agent (opt-in)
+
+### Manual Installation (MCP Server Only)
 
 Add to `~/.claude/config.json` or your project's `.mcp.json`:
 
@@ -35,6 +56,12 @@ Add to `~/.claude/config.json` or your project's `.mcp.json`:
 }
 ```
 
+Then install:
+```bash
+cd ~/claude-journal-mcp
+pip install -e .
+```
+
 ## Database Location
 
 Default: `~/.claude/journal.db`
@@ -44,7 +71,126 @@ Override with environment variable:
 export JOURNAL_DB_PATH="/path/to/your/journal.db"
 ```
 
-## Available Tools
+## Slash Commands
+
+The plugin provides 6 slash commands for easy interaction:
+
+### `/journal-add`
+Interactively create a new journal entry. Claude guides you through:
+- Title
+- Description
+- Project (auto-detected from git)
+- Tags (suggested based on content)
+
+```
+You: /journal-add
+Claude: Let's create a journal entry. What's the title?
+You: Implemented rate limiting
+Claude: Great! Tell me more about it...
+```
+
+### `/journal-search`
+Search entries by keywords with optional project filter.
+
+```
+You: /journal-search
+Claude: What would you like to search for?
+You: authentication
+Claude: [Shows all auth-related entries]
+```
+
+### `/journal-recent`
+Show recent entries to restore context (especially useful after `/clear`).
+
+```
+You: /clear
+You: /journal-recent
+Claude: Here's what you were working on:
+[Lists recent entries with summaries]
+```
+
+### `/journal-time`
+Query entries using natural language time expressions.
+
+```
+You: /journal-time
+You: last week
+Claude: [Shows all entries from last week]
+```
+
+Supports: "yesterday", "last month", "january 2024", "last 3 days", etc.
+
+### `/journal-stats`
+View statistics about your journal usage.
+
+```
+You: /journal-stats
+Claude:
+📊 247 entries across 5 projects
+📅 Jan 15 - Jul 20, 2024 (6 months)
+Most active: my-app (89 entries)
+```
+
+### `/journal-export`
+Export your journal for backup or sharing between machines.
+
+```
+You: /journal-export
+Claude: Where should I save the export?
+You: ~/backups/journal_2024.db
+Claude: ✅ Exported to ~/backups/journal_2024.db
+```
+
+## Skills
+
+The plugin includes 3 proactive skills that Claude uses automatically:
+
+### `journal-capture`
+Automatically captures significant work when you:
+- Complete features or tasks
+- Fix complex bugs
+- Make technical decisions
+- Solve challenging problems
+
+Claude recognizes important moments and captures them without being asked.
+
+### `context-recovery`
+Restores your working context from the journal:
+- **Automatically** after `/clear` command
+- When you ask "what was I working on?"
+- At session start to resume past work
+
+Brings back project context, recent changes, and next steps.
+
+### `find-related-work`
+Searches for past work related to current tasks:
+- Before implementing similar features
+- When making architecture decisions
+- During troubleshooting
+- When you explicitly ask about past work
+
+Helps avoid reinventing solutions and maintains consistency.
+
+## Agent
+
+The plugin includes an **optional** Journal Assistant agent.
+
+When you first use journal features, Claude will prompt:
+```
+Would you like to enable the Journal Assistant agent?
+
+The agent helps by:
+- Automatically capturing significant work
+- Recovering context after /clear
+- Finding related past work
+- Suggesting when to journal
+
+Enable now?
+```
+
+The agent is **opt-in** but recommended for the best experience.
+
+## Available MCP Tools
 
 ### Write Operations
 
@@ -186,74 +332,39 @@ Claude: [Calls journal_import]
 ✅ Imported 150 new entries
 ```
 
-## Auto-Capture
+## Auto-Capture Hook
 
-### Context-Based
-Claude automatically creates entries when:
-- Significant implementation work is completed
-- Important decisions are made
-- Complex problems are solved
-- Major milestones are reached
+The plugin includes an auto-capture hook that runs automatically when installed.
 
-### Time-Based Hook
-Configure a hook to auto-capture every 30 minutes if activity occurred.
+**How it works:**
+- Monitors conversation activity
+- Every 30 minutes with 3+ messages, prompts Claude to capture context
+- Maintains state in `~/.claude/journal-capture-state.json`
+- Auto-enabled on plugin installation
 
-Create `~/.claude/hooks/config.json`:
+**Configuration:**
+
+The hook is defined in `hooks/hooks.json` and automatically enabled:
 ```json
 {
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matchers": ["*"],
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/journal-auto-capture.js",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
-  }
+  "hooks": [
+    {
+      "name": "journal-auto-capture",
+      "event": "user-prompt-submit",
+      "command": "node",
+      "args": ["{{plugin_dir}}/hooks/journal-auto-capture.js"],
+      "enabled": true,
+      "auto_enable": true
+    }
+  ]
 }
 ```
 
-Create `~/.claude/hooks/journal-auto-capture.js`:
-```javascript
-#!/usr/bin/env node
-
-// Auto-capture journal entry every 30 minutes if activity occurred
-const CAPTURE_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const STATE_FILE = require('path').join(
-  process.env.HOME, '.claude', 'journal-capture-state.json'
-);
-
-// Load state
-let state = { lastCapture: 0, messageCount: 0 };
-try {
-  state = require(STATE_FILE);
-} catch {}
-
-// Update message count
-state.messageCount++;
-
-// Check if we should capture
-const now = Date.now();
-const elapsed = now - state.lastCapture;
-
-if (elapsed > CAPTURE_INTERVAL && state.messageCount > 3) {
-  // Trigger auto-capture by calling MCP tool
-  // (Claude Code will handle this via MCP)
-  console.log("🕐 30 minutes elapsed with activity - consider auto-capturing");
-
-  // Reset state
-  state.lastCapture = now;
-  state.messageCount = 0;
-
-  // Save state
-  require('fs').writeFileSync(STATE_FILE, JSON.stringify(state));
-}
-```
+**Behavior:**
+- Runs on every user prompt submission
+- Low overhead (checks timestamp and counter)
+- Suggests capture when threshold reached
+- Claude decides what to capture based on conversation content
 
 ## Database Schema
 
@@ -283,14 +394,37 @@ pytest tests/
 
 ```
 claude-journal-mcp/
+├── .claude-plugin/
+│   └── plugin.json         # Plugin manifest
+├── agents/
+│   └── journal-assistant.md # Journal assistant agent
+├── commands/
+│   ├── journal-add.md      # /journal-add command
+│   ├── journal-export.md   # /journal-export command
+│   ├── journal-recent.md   # /journal-recent command
+│   ├── journal-search.md   # /journal-search command
+│   ├── journal-stats.md    # /journal-stats command
+│   └── journal-time.md     # /journal-time command
+├── hooks/
+│   ├── hooks.json          # Hook configuration
+│   └── journal-auto-capture.js # Auto-capture hook
+├── skills/
+│   ├── journal-capture/
+│   │   └── SKILL.md        # Proactive capture skill
+│   ├── context-recovery/
+│   │   └── SKILL.md        # Context recovery skill
+│   └── find-related-work/
+│       └── SKILL.md        # Related work finder skill
 ├── src/
 │   └── claude_journal/
 │       ├── __init__.py
-│       ├── server.py      # MCP server
-│       ├── database.py    # SQLite operations
-│       └── time_parser.py # Natural language time parsing
+│       ├── server.py       # MCP server
+│       ├── database.py     # SQLite operations
+│       └── time_parser.py  # Natural language time parsing
 ├── tests/
+├── .mcp.json               # MCP server config
 ├── pyproject.toml
+├── LICENSE
 └── README.md
 ```
 

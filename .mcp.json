@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "journal": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "claude_journal.server"],
+      "description": "Claude Journal MCP server - lightweight SQLite-based memory system"
+    }
+  }
+}
