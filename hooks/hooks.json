@@ -1,15 +1,15 @@
 {
-  "hooks": [
-    {
-      "name": "journal-auto-capture",
-      "description": "Automatically captures conversation context to journal every 30 minutes",
-      "event": "user-prompt-submit",
-      "command": "node",
-      "args": [
-        "{{plugin_dir}}/hooks/journal-auto-capture.js"
-      ],
-      "enabled": true,
-      "auto_enable": true
-    }
-  ]
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/journal-auto-capture.js"
+          }
+        ]
+      }
+    ]
+  }
 }
