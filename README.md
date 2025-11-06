@@ -18,18 +18,28 @@ This is a full-featured Claude Code plugin with slash commands, skills, an agent
 - ✅ **Skills**: 3 proactive AI skills for context recovery and smart capture
 - ✅ **Agent**: Optional journal assistant for enhanced workflows
 
+## Requirements
+
+- Python 3.12 or higher
+- [uv](https://docs.astral.sh/uv/) (recommended) or pip
+
 ## Installation
 
-### As a Plugin (Recommended)
+### Quick Start (Recommended)
 
-1. Clone and install:
+1. **Install uv** (if not already installed):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2. **Clone and install the plugin:**
 ```bash
 git clone https://github.com/chrismbryant/claude-journal-mcp.git
 cd claude-journal-mcp
-pip install -e .
+uv sync
 ```
 
-2. Install the plugin:
+3. **Install as a Claude Code plugin:**
 ```bash
 claude /plugin install .
 ```
@@ -41,10 +51,20 @@ This automatically:
 - Sets up auto-capture hooks
 - Prompts you to enable the agent (opt-in)
 
-### Manual Installation (MCP Server Only)
+### Alternative: Manual MCP Server Installation
 
-Add to `~/.claude/config.json` or your project's `.mcp.json`:
+If you prefer to install just the MCP server without the plugin features:
 
+1. **Install dependencies:**
+```bash
+# With uv (recommended - faster)
+uv sync
+
+# Or with pip
+pip install -e .
+```
+
+2. **Add to `~/.claude/config.json` or your project's `.mcp.json`:**
 ```json
 {
   "mcpServers": {
@@ -56,11 +76,7 @@ Add to `~/.claude/config.json` or your project's `.mcp.json`:
 }
 ```
 
-Then install:
-```bash
-cd ~/claude-journal-mcp
-pip install -e .
-```
+**Note:** Manual installation only provides MCP tools. You won't get slash commands, skills, or the agent without installing as a plugin.
 
 ## Database Location
 
