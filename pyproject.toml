@@ -16,6 +16,9 @@ dev = [
     "pytest-cov>=4.0.0",
 ]
 
+[project.scripts]
+claude-journal = "claude_journal.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
