@@ -1,14 +1,12 @@
 {
   "name": "claude-journal",
-  "displayName": "Claude Journal",
   "description": "Lightweight journal/memory system with zero ML dependencies. SQLite-based with natural language time queries, auto-capture, and smart context recovery.",
   "version": "0.1.0",
-  "author": "Chris Bryant",
-  "homepage": "https://github.com/chrismbryant/claude-journal-mcp",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/chrismbryant/claude-journal-mcp"
+  "author": {
+    "name": "Chris Bryant"
   },
+  "homepage": "https://github.com/chrismbryant/claude-journal-mcp",
+  "repository": "https://github.com/chrismbryant/claude-journal-mcp",
   "keywords": [
     "journal",
     "memory",
