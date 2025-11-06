@@ -82,7 +82,7 @@ function main() {
 
   // Check if we should trigger auto-capture
   const shouldCapture = (
-    elapsed > CAPTURE_INTERVAL &&
+    elapsed > CAPTURE_INTERVAL ||
     state.messageCount >= MIN_ACTIVITY_THRESHOLD
   );
 
