@@ -17,5 +17,11 @@
     "context",
     "auto-capture"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "mcpServers": {
+    "journal": {
+      "command": "python",
+      "args": ["-m", "claude_journal.server"]
+    }
+  }
 }
