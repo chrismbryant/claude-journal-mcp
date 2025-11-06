@@ -1,0 +1,18 @@
+{
+  "name": "claude-journal-dev",
+  "owner": {
+    "name": "Chris Bryant",
+    "email": "dev@example.com"
+  },
+  "plugins": [
+    {
+      "name": "claude-journal",
+      "source": ".",
+      "description": "Lightweight journal/memory plugin for Claude Code with zero ML dependencies",
+      "version": "0.1.0",
+      "author": {
+        "name": "Chris Bryant"
+      }
+    }
+  ]
+}
