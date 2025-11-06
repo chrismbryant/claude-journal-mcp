@@ -435,6 +435,30 @@ CREATE INDEX idx_project ON journal_entries(project);
 pytest tests/
 ```
 
+### Contributing Changes
+
+**Important:** The `main` branch is protected and requires pull requests.
+
+```bash
+# Create a feature branch
+git checkout -b your-feature-name
+
+# Make your changes and commit
+git add .
+git commit -m "Description of changes"
+
+# Push your branch
+git push -u origin your-feature-name
+
+# Create a pull request
+gh pr create --title "Your PR title" --body "Description"
+
+# After CI passes, merge the PR
+gh pr merge <PR-number> --squash --delete-branch
+```
+
+**Do not push directly to main** - all changes must go through pull requests.
+
 ### Project Structure
 
 ```
