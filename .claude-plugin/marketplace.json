@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "claude-journal",
-      "source": ".",
+      "source": "./",
       "description": "Lightweight journal/memory plugin for Claude Code with zero ML dependencies",
       "version": "0.1.0",
       "author": {
