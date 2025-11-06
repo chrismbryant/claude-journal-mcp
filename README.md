@@ -41,15 +41,20 @@ uv sync
 
 3. **Install as a Claude Code plugin:**
 ```bash
+# Option A: Direct install from current directory
 claude /plugin install .
+
+# Option B: Add marketplace first, then install
+claude /marketplace add ./marketplace.json
+claude /plugin install claude-journal
 ```
 
 This automatically:
-- Configures the MCP server
-- Registers slash commands
-- Enables skills
-- Sets up auto-capture hooks
-- Prompts you to enable the agent (opt-in)
+- Configures the MCP server (provides all 11 journal tools)
+- Registers 6 slash commands (/journal-add, /journal-search, etc.)
+- Enables 3 proactive skills (journal-capture, context-recovery, find-related-work)
+- Sets up auto-capture hooks (triggers every 30 min or 3 messages)
+- Prompts you to enable the journal-assistant agent (opt-in)
 
 ### Alternative: Manual MCP Server Installation
 
@@ -354,7 +359,8 @@ The plugin includes an auto-capture hook that runs automatically when installed.
 
 **How it works:**
 - Monitors conversation activity
-- Every 30 minutes with 3+ messages, prompts Claude to capture context
+- Triggers every 30 minutes **or** when 3+ messages are sent (whichever comes first)
+- Automatically creates journal entries via CLI
 - Maintains state in `~/.claude/journal-capture-state.json`
 - Auto-enabled on plugin installation
 
@@ -363,24 +369,47 @@ The plugin includes an auto-capture hook that runs automatically when installed.
 The hook is defined in `hooks/hooks.json` and automatically enabled:
 ```json
 {
-  "hooks": [
-    {
-      "name": "journal-auto-capture",
-      "event": "user-prompt-submit",
-      "command": "node",
-      "args": ["{{plugin_dir}}/hooks/journal-auto-capture.js"],
-      "enabled": true,
-      "auto_enable": true
-    }
-  ]
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/journal-auto-capture.js"
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
 **Behavior:**
 - Runs on every user prompt submission
 - Low overhead (checks timestamp and counter)
-- Suggests capture when threshold reached
-- Claude decides what to capture based on conversation content
+- Automatically creates journal entry when threshold reached
+- Captures current project (from git) and timestamps session activity
+- Additionally, Claude can proactively use journal tools to capture significant work based on conversation context
+
+## CLI Interface
+
+The plugin includes a CLI for direct journal operations, primarily used by hooks:
+
+```bash
+# Auto-capture current session (used by hooks)
+python -m claude_journal.cli auto-capture
+
+# Or with the installed script
+claude-journal auto-capture
+```
+
+The auto-capture command:
+- Detects current project from git repository
+- Creates a timestamped entry with "auto-capture" tag
+- Provides lightweight journaling for automated workflows
+
+This is used internally by the auto-capture hook but can also be called manually or from other scripts.
 
 ## Database Schema
 
