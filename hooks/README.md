@@ -4,14 +4,22 @@ This hook automatically triggers journal entries every 30 minutes when you're ac
 
 ## Installation
 
-### 1. Copy the hook file
+### Automatic (Recommended)
+
+If you installed via the plugin system (`claude /plugin install`), the hook is **automatically configured** and ready to use. No manual setup needed!
+
+### Manual Installation (Without Plugin)
+
+If you're using only the MCP server without the plugin:
+
+#### 1. Copy the hook file
 
 ```bash
 cp hooks/journal-auto-capture.js ~/.claude/hooks/
 chmod +x ~/.claude/hooks/journal-auto-capture.js
 ```
 
-### 2. Configure Claude Code hooks
+#### 2. Configure Claude Code hooks
 
 Edit or create `~/.claude/hooks/config.json`:
 
@@ -34,7 +42,7 @@ Edit or create `~/.claude/hooks/config.json`:
 }
 ```
 
-### 3. Configure auto-capture behavior (optional)
+### Configure auto-capture behavior (optional)
 
 The hook uses these defaults:
 - **Capture Interval**: 30 minutes
