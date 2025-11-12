@@ -8,7 +8,7 @@ This is a full-featured Claude Code plugin with slash commands, skills, an agent
 
 - ✅ **Lightweight**: No embeddings, no ML models, just SQLite
 - ✅ **Fast**: Sub-millisecond queries on local database
-- ✅ **Smart Search**: Full-text search across titles, descriptions, tags
+- ✅ **Smart Search**: Advanced search with ID lookup, tag filtering, exact phrases, date ranges, and keywords
 - ✅ **Time Queries**: Natural language like "last month", "yesterday"
 - ✅ **Project Tracking**: Organize entries by repository/project
 - ✅ **Auto-Capture**: Automatic periodic journaling via hooks
@@ -111,7 +111,7 @@ Claude: Great! Tell me more about it...
 ```
 
 ### `/journal-search`
-Search entries by keywords with optional project filter.
+Search entries with advanced query syntax. Supports ID lookup, tag filtering, exact phrases, date ranges, and keywords.
 
 ```
 You: /journal-search
@@ -119,6 +119,13 @@ Claude: What would you like to search for?
 You: authentication
 Claude: [Shows all auth-related entries]
 ```
+
+**Advanced search syntax:**
+- **ID search**: `42` or `id:42` - Find specific entry by ID
+- **Tag filter**: `tag:bugfix` or `#bugfix` - Filter by tag
+- **Exact phrase**: `"user authentication"` - Match exact phrase
+- **Date range**: `last week authentication` - Combine time with search
+- **Combined**: `tag:bugfix "login error" last month` - Mix multiple filters
 
 ### `/journal-recent`
 Show recent entries to restore context (especially useful after `/clear`).
@@ -231,9 +238,15 @@ Automatically called by hooks or when Claude detects significant work
 
 ### Read Operations
 
-**`journal_search`** - Text search
+**`journal_search`** - Advanced text search
 ```
-Search for "authentication" in project "my-app"
+Search examples:
+- "authentication" - Keyword search
+- "42" or "id:42" - Find entry by ID
+- "tag:bugfix" or "#bugfix" - Filter by tag
+- "\"user authentication\"" - Exact phrase match
+- "last week authentication" - Date range + keyword
+- "tag:bugfix \"login error\" performance" - Combined filters
 ```
 
 **`journal_time_query`** - Time-based search
@@ -388,28 +401,23 @@ The hook is defined in `hooks/hooks.json` and automatically enabled:
 **Behavior:**
 - Runs on every user prompt submission
 - Low overhead (checks timestamp and counter)
-- Automatically creates journal entry when threshold reached
-- Captures current project (from git) and timestamps session activity
-- Additionally, Claude can proactively use journal tools to capture significant work based on conversation context
+- When threshold reached (30 min or 3+ messages), prompts Claude to analyze the session
+- Claude reviews the conversation and creates a meaningful journal entry with:
+  - Goal (what we were trying to do)
+  - Accomplishments (what was done)
+  - Relevant tags and project information
+- Claude can also proactively use journal tools to capture significant work at any time based on conversation context
 
 ## CLI Interface
 
-The plugin includes a CLI for direct journal operations, primarily used by hooks:
+The plugin includes a minimal CLI that provides information about available MCP tools:
 
 ```bash
-# Auto-capture current session (used by hooks)
-python -m claude_journal.cli auto-capture
-
-# Or with the installed script
-claude-journal auto-capture
+python -m claude_journal.cli
+# Or: claude-journal
 ```
 
-The auto-capture command:
-- Detects current project from git repository
-- Creates a timestamped entry with "auto-capture" tag
-- Provides lightweight journaling for automated workflows
-
-This is used internally by the auto-capture hook but can also be called manually or from other scripts.
+All journal operations are performed through the MCP server, not via CLI commands. The auto-capture hook triggers Claude to create entries using the `journal_auto_capture` MCP tool.
 
 ## Database Schema
 

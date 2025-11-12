@@ -87,22 +87,17 @@ function main() {
   );
 
   if (shouldCapture) {
-    console.log('🕐 Auto-capture triggered: 30 minutes elapsed with activity');
-    console.log(`   Messages since last capture: ${state.messageCount}`);
+    console.log('🕐 Journal auto-capture triggered');
+    console.log(`   ${state.messageCount} messages exchanged since last capture`);
     if (state.lastProject) {
-      console.log(`   Current project: ${state.lastProject}`);
+      console.log(`   Project: ${state.lastProject}`);
     }
-
-    // Automatically capture to journal
-    try {
-      const { execSync } = require('child_process');
-      execSync('python -m claude_journal.cli auto-capture', {
-        stdio: 'inherit',
-        cwd: process.cwd()
-      });
-    } catch (error) {
-      console.error(`   Warning: Failed to auto-capture: ${error.message}`);
-    }
+    console.log('');
+    console.log('📝 Please capture this session to the journal:');
+    console.log('   - Summarize the goal (what we were trying to do)');
+    console.log('   - Summarize what was accomplished');
+    console.log('   - Use journal_auto_capture with a brief summary');
+    console.log('');
 
     // Reset state
     state.lastCapture = now;

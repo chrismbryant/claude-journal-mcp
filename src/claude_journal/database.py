@@ -87,32 +87,128 @@ class JournalDatabase:
         project: Optional[str] = None,
         limit: int = 20
     ) -> List[Dict[str, Any]]:
-        """Search journal entries by text.
+        """Search journal entries with advanced query syntax.
+
+        Supports:
+        - ID search: "42" or "id:42" returns entry with that ID
+        - Tag filter: "tag:bugfix" or "#bugfix" filters by tag
+        - Exact phrases: "\"user authentication\"" matches exact phrase
+        - Date ranges: "last week", "yesterday", etc. combined with text
+        - Keywords: regular text searches title, description, tags
 
         Args:
-            query: Search query (searches title, description, tags)
+            query: Search query with optional special syntax
             project: Optional project filter
             limit: Maximum results to return
 
         Returns:
             List of matching entries
         """
-        query_lower = f"%{query.lower()}%"
+        import re
 
-        sql = """
-            SELECT * FROM journal_entries
-            WHERE (
-                LOWER(title) LIKE ? OR
-                LOWER(description) LIKE ? OR
-                LOWER(tags) LIKE ?
+        # Check for ID-only search (numeric or id:N)
+        id_match = re.match(r'^(?:id:)?(\d+)$', query.strip(), re.IGNORECASE)
+        if id_match:
+            entry_id = int(id_match.group(1))
+            cursor = self.conn.execute(
+                "SELECT * FROM journal_entries WHERE id = ?",
+                (entry_id,)
             )
-        """
-        params = [query_lower, query_lower, query_lower]
+            result = cursor.fetchone()
+            return [dict(result)] if result else []
 
+        # Parse query components
+        tags_to_filter = []
+        exact_phrases = []
+        keywords = []
+        time_expression = None
+
+        # Extract tags (tag:name or #name)
+        query = re.sub(
+            r'(?:tag:(\w+)|#(\w+))',
+            lambda m: (tags_to_filter.append(m.group(1) or m.group(2)), '')[1],
+            query
+        )
+
+        # Extract exact phrases ("quoted text")
+        query = re.sub(
+            r'"([^"]+)"',
+            lambda m: (exact_phrases.append(m.group(1)), '')[1],
+            query
+        )
+
+        # Check for time expressions (last week, yesterday, etc.)
+        time_keywords = [
+            'yesterday', 'today', 'last week', 'last month', 'last year',
+            'this week', 'this month', 'this year', 'last \\d+ days?',
+            'last \\d+ weeks?', 'last \\d+ months?', 'january', 'february',
+            'march', 'april', 'may', 'june', 'july', 'august', 'september',
+            'october', 'november', 'december'
+        ]
+        time_pattern = '|'.join(time_keywords)
+        time_match = re.search(rf'\b({time_pattern})\b(?:\s+(\d{{4}}))?', query, re.IGNORECASE)
+        if time_match:
+            time_expression = time_match.group(0).strip()
+            query = query.replace(time_match.group(0), '')
+
+        # Remaining text is keywords
+        keywords = [k.strip() for k in query.split() if k.strip()]
+
+        # Build SQL query
+        sql = "SELECT * FROM journal_entries WHERE 1=1"
+        params = []
+
+        # Apply time range filter if time expression found
+        if time_expression:
+            try:
+                from .time_parser import parse_time_expression
+                start_date, end_date = parse_time_expression(time_expression)
+                sql += " AND created_at BETWEEN ? AND ?"
+                params.extend([start_date, end_date])
+            except:
+                # If parsing fails, treat as keyword
+                keywords.append(time_expression)
+
+        # Apply tag filters
+        for tag in tags_to_filter:
+            sql += " AND (LOWER(tags) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(tags) = ?)"
+            tag_lower = tag.lower()
+            params.extend([
+                f"%,{tag_lower},%",  # middle of list
+                f"{tag_lower},%",     # start of list
+                f"%,{tag_lower}",     # end of list
+                tag_lower             # only item
+            ])
+
+        # Apply exact phrase matches
+        for phrase in exact_phrases:
+            phrase_lower = f"%{phrase.lower()}%"
+            sql += """ AND (
+                LOWER(title) LIKE ? OR
+                LOWER(description) LIKE ?
+            )"""
+            params.extend([phrase_lower, phrase_lower])
+
+        # Apply keyword searches
+        if keywords:
+            keyword_conditions = []
+            for keyword in keywords:
+                keyword_lower = f"%{keyword.lower()}%"
+                keyword_conditions.append("""(
+                    LOWER(title) LIKE ? OR
+                    LOWER(description) LIKE ? OR
+                    LOWER(tags) LIKE ?
+                )""")
+                params.extend([keyword_lower, keyword_lower, keyword_lower])
+
+            sql += " AND (" + " AND ".join(keyword_conditions) + ")"
+
+        # Apply project filter
         if project:
             sql += " AND project = ?"
             params.append(project)
 
+        # Order and limit
         sql += " ORDER BY created_at DESC LIMIT ?"
         params.append(limit)
 

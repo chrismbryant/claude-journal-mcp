@@ -42,14 +42,15 @@ Use the `journal_auto_capture` MCP tool:
 
 ```
 journal_auto_capture(
-  summary="Brief 1-sentence summary of what was accomplished"
+  title="Brief title of what was accomplished",
+  description="The goal (what we were trying to do) and what was done"
 )
 ```
 
 The tool automatically:
-- Extracts context from the conversation
 - Determines the project (if in a git repo)
-- Generates relevant tags
+- Adds the "auto-capture" tag
+- Generates relevant tags based on content
 - Creates a structured journal entry
 
 ## Examples
@@ -58,28 +59,40 @@ The tool automatically:
 ```
 User: "Add authentication to the API"
 [You implement OAuth2 with JWT tokens]
-→ journal_auto_capture(summary="Implemented OAuth2 authentication with JWT tokens")
+→ journal_auto_capture(
+    title="Implemented OAuth2 authentication",
+    description="User requested API authentication. Implemented OAuth2 flow with JWT tokens for secure user sessions."
+  )
 ```
 
 **Example 2: Bug fix**
 ```
 User: "The cache is leaking memory"
 [You identify and fix the leak]
-→ journal_auto_capture(summary="Fixed cache memory leak by clearing stale entries")
+→ journal_auto_capture(
+    title="Fixed cache memory leak",
+    description="User reported memory leak in cache. Identified and fixed by implementing automatic clearing of stale entries."
+  )
 ```
 
 **Example 3: Technical decision**
 ```
 User: "Should we use Redis or PostgreSQL for caching?"
 [Discussion leads to Redis choice]
-→ journal_auto_capture(summary="Chose Redis over PostgreSQL for caching due to performance needs")
+→ journal_auto_capture(
+    title="Chose Redis for caching",
+    description="Evaluated Redis vs PostgreSQL for caching needs. Selected Redis due to better performance for our use case."
+  )
 ```
 
 **Example 4: Infrastructure setup**
 ```
 User: "Set up CI/CD pipeline"
 [You configure GitHub Actions with tests and deployment]
-→ journal_auto_capture(summary="Set up GitHub Actions CI/CD with automated tests and deployment")
+→ journal_auto_capture(
+    title="Set up GitHub Actions CI/CD",
+    description="User requested CI/CD pipeline. Configured GitHub Actions with automated tests and deployment workflow."
+  )
 ```
 
 ## What NOT to Capture
@@ -96,8 +109,31 @@ Capture entries:
 - **Immediately after** completing significant work
 - **Before** moving to the next major task
 - **At natural breakpoints** in the conversation
+- **When the auto-capture hook triggers** (every 30 min or 3+ messages)
 
 This ensures the journal stays current and useful for future context recovery.
+
+## Responding to Auto-Capture Hook
+
+When you see a message from the auto-capture hook:
+```
+🕐 Journal auto-capture triggered
+   N messages exchanged since last capture
+   Project: <project-name>
+
+📝 Please capture this session to the journal:
+   - Summarize the goal (what we were trying to do)
+   - Summarize what was accomplished
+   - Use journal_auto_capture with a brief summary
+```
+
+**Respond by:**
+1. Analyzing the conversation since the last capture
+2. Identifying the main goal or objective discussed
+3. Summarizing what was accomplished or decided
+4. Calling `journal_auto_capture` with an appropriate title and description
+
+If nothing significant happened (just trivial Q&A), you can acknowledge the hook but explain that there's nothing substantial to capture.
 
 ## Benefits
 
