@@ -5,6 +5,21 @@ from typing import Tuple
 import re
 
 
+def _format_sqlite_timestamp(dt: datetime) -> str:
+    """Format datetime to SQLite timestamp format.
+
+    SQLite stores timestamps as 'YYYY-MM-DD HH:MM:SS' (space separator, no microseconds).
+    This ensures our time range queries match the database format.
+
+    Args:
+        dt: datetime object to format
+
+    Returns:
+        Timestamp string in SQLite format
+    """
+    return dt.strftime('%Y-%m-%d %H:%M:%S')
+
+
 def parse_time_expression(expression: str) -> Tuple[str, str]:
     """Parse natural language time expression to date range.
 
@@ -29,21 +44,21 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
     if expression == "today":
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # Yesterday
     if expression == "yesterday":
         yesterday = now - timedelta(days=1)
         start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
         end = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # This week
     if expression in ["this week", "current week"]:
         start = now - timedelta(days=now.weekday())
         start = start.replace(hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # Last N days/weeks/months
     last_n_pattern = r"last (\d+) (day|days|week|weeks|month|months)"
@@ -62,7 +77,7 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
 
         start = start.replace(hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # Last week/month/year
     if expression == "last week":
@@ -70,7 +85,7 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
         start = end - timedelta(days=6)
         start = start.replace(hour=0, minute=0, second=0, microsecond=0)
         end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     if expression == "last month":
         # Go to first day of current month
@@ -80,23 +95,23 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
         # Get first day of previous month
         start = end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     if expression == "last year":
         start = datetime(now.year - 1, 1, 1, 0, 0, 0)
         end = datetime(now.year - 1, 12, 31, 23, 59, 59, 999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # This month/year
     if expression in ["this month", "current month"]:
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     if expression in ["this year", "current year"]:
         start = datetime(now.year, 1, 1, 0, 0, 0)
         end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # Month names
     months = {
@@ -123,7 +138,7 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
             end = next_month - timedelta(days=1)
             end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # ISO date format (YYYY-MM-DD)
     iso_date_pattern = r"(\d{4})-(\d{2})-(\d{2})"
@@ -132,10 +147,10 @@ def parse_time_expression(expression: str) -> Tuple[str, str]:
         year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
         start = datetime(year, month, day, 0, 0, 0)
         end = datetime(year, month, day, 23, 59, 59, 999999)
-        return start.isoformat(), end.isoformat()
+        return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
 
     # If we can't parse, default to last 7 days
     start = now - timedelta(days=7)
     start = start.replace(hour=0, minute=0, second=0, microsecond=0)
     end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
-    return start.isoformat(), end.isoformat()
+    return _format_sqlite_timestamp(start), _format_sqlite_timestamp(end)
