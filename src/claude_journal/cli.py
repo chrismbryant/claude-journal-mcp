@@ -1,47 +1,11 @@
 """CLI interface for Claude Journal MCP.
 
-Provides command-line access to journal operations, primarily for hooks.
+Currently, all journal operations are performed through the MCP server.
+This CLI module is reserved for future command-line utilities if needed.
 """
 
 import sys
 import argparse
-from claude_journal.database import JournalDatabase
-
-
-def auto_capture():
-    """Auto-capture from conversation context.
-
-    This is called by hooks and creates a simple timestamped entry.
-    For detailed entries, use the MCP tool journal_auto_capture instead.
-    """
-    db = JournalDatabase()
-
-    # Get current project from git if available
-    project = None
-    try:
-        import subprocess
-        result = subprocess.run(
-            ['git', 'rev-parse', '--show-toplevel'],
-            capture_output=True,
-            text=True,
-            cwd='.'
-        )
-        if result.returncode == 0:
-            import os
-            project = os.path.basename(result.stdout.strip())
-    except Exception:
-        pass
-
-    # Create a simple auto-capture entry
-    db.add_entry(
-        title="Auto-captured session activity",
-        description="Automatically captured conversation activity. Review and update with more details if needed.",
-        project=project,
-        tags=["auto-capture"]
-    )
-
-    db.close()
-    print("✓ Auto-captured session activity to journal")
 
 
 def main():
@@ -53,19 +17,26 @@ def main():
 
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
-    # auto-capture command
-    subparsers.add_parser(
-        'auto-capture',
-        help='Auto-capture current session (called by hooks)'
-    )
-
     args = parser.parse_args()
 
-    if args.command == 'auto-capture':
-        auto_capture()
-    else:
-        parser.print_help()
+    if args.command:
+        print(f"Unknown command: {args.command}")
         sys.exit(1)
+    else:
+        print("Claude Journal")
+        print("")
+        print("All journal operations are performed through the MCP server.")
+        print("Use the MCP tools from Claude Code instead of this CLI.")
+        print("")
+        print("Available MCP tools:")
+        print("  - journal_add: Add a new entry")
+        print("  - journal_auto_capture: Auto-capture session activity")
+        print("  - journal_search: Search entries")
+        print("  - journal_time_query: Query by time period")
+        print("  - journal_list_recent: List recent entries")
+        print("  - journal_stats: View statistics")
+        print("  - journal_export/import: Export/import journal")
+        sys.exit(0)
 
 
 if __name__ == '__main__':

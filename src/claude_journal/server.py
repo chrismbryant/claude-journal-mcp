@@ -50,13 +50,17 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="journal_auto_capture",
-            description="Automatically capture significant work. Use when substantial progress or decisions were made (context-based). Called by hooks every 30 minutes if activity occurred.",
+            description="Automatically capture significant work. Use when substantial progress or decisions were made (context-based). Called by hooks every 30 minutes if activity occurred. Summarize the goal (what we were trying to do) and what was accomplished.",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "summary": {
+                    "title": {
                         "type": "string",
-                        "description": "Brief summary of recent work/decisions"
+                        "description": "Brief title summarizing what was accomplished"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed description: the goal (what we were trying to do) and what was done (1-2 sentences)"
                     },
                     "project": {
                         "type": "string",
@@ -68,18 +72,18 @@ async def list_tools() -> List[Tool]:
                         "description": "Optional list of tags"
                     }
                 },
-                "required": ["summary"]
+                "required": ["title", "description"]
             }
         ),
         Tool(
             name="journal_search",
-            description="Search journal entries by text. Searches through titles, descriptions, and tags.",
+            description="Search journal entries with advanced query syntax. Supports: ID search (\"42\" or \"id:42\"), tag filtering (\"tag:bugfix\" or \"#bugfix\"), exact phrases (\"\\\"user auth\\\"\"), date ranges (\"last week authentication\"), and keywords. All filters can be combined.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query"
+                        "description": "Search query with optional syntax: ID (42 or id:42), tags (tag:name or #name), exact phrases (\"phrase\"), time (last week, yesterday), keywords"
                     },
                     "project": {
                         "type": "string",
@@ -227,8 +231,8 @@ async def call_tool(name: str, arguments: dict) -> List[TextContent]:
 
         elif name == "journal_auto_capture":
             entry_id = db.add_entry(
-                title="Auto-captured session",
-                description=arguments["summary"],
+                title=arguments["title"],
+                description=arguments["description"],
                 project=arguments.get("project"),
                 tags=["auto-capture"] + (arguments.get("tags") or [])
             )

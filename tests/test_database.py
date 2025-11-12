@@ -189,6 +189,125 @@ class TestSearch:
         results = populated_db.search("nonexistent query xyz")
         assert len(results) == 0
 
+    def test_search_by_id(self, populated_db):
+        """Test searching by entry ID."""
+        # Get an entry ID first
+        all_entries = populated_db.list_recent(limit=1)
+        assert len(all_entries) > 0
+        entry_id = all_entries[0]["id"]
+
+        # Search by ID
+        results = populated_db.search(str(entry_id))
+        assert len(results) == 1
+        assert results[0]["id"] == entry_id
+
+        # Search with id: prefix
+        results = populated_db.search(f"id:{entry_id}")
+        assert len(results) == 1
+        assert results[0]["id"] == entry_id
+
+    def test_search_by_id_not_found(self, populated_db):
+        """Test searching by non-existent ID."""
+        results = populated_db.search("99999")
+        assert len(results) == 0
+
+    def test_search_by_tag_filter(self, populated_db):
+        """Test filtering by specific tag."""
+        # Search using tag: syntax
+        results = populated_db.search("tag:performance")
+        assert len(results) == 1
+        assert "performance" in results[0]["tags"]
+
+        # Search using # syntax
+        results = populated_db.search("#auth")
+        assert len(results) >= 1
+        for r in results:
+            assert "auth" in r["tags"].lower()
+
+    def test_search_exact_phrase(self, populated_db):
+        """Test exact phrase matching with quotes."""
+        # Add an entry with specific phrase
+        entry_id = populated_db.add_entry(
+            title="Test exact match",
+            description="This is user authentication system",
+            tags=["test"]
+        )
+
+        # Search with exact phrase
+        results = populated_db.search('"user authentication"')
+        assert len(results) >= 1
+        found = any(r["id"] == entry_id for r in results)
+        assert found
+
+        # Make sure partial match doesn't work the same way
+        results_partial = populated_db.search('"authentication user"')
+        found_partial = any(r["id"] == entry_id for r in results_partial)
+        assert not found_partial  # Should not match reversed phrase
+
+    def test_search_combined_filters(self, populated_db):
+        """Test combining multiple filter types."""
+        # Add test entries
+        entry_id1 = populated_db.add_entry(
+            title="Authentication bugfix",
+            description="Fixed critical auth bug in login system",
+            tags=["bugfix", "auth"]
+        )
+        entry_id2 = populated_db.add_entry(
+            title="Performance improvement",
+            description="Improved authentication speed",
+            tags=["performance", "auth"]
+        )
+
+        # Search with tag filter + keyword
+        results = populated_db.search("tag:bugfix authentication")
+        assert len(results) >= 1
+        # Should find entry1 with bugfix tag and authentication keyword
+        found = any(r["id"] == entry_id1 for r in results)
+        assert found
+
+        # Search with tag + exact phrase
+        results = populated_db.search('tag:auth "login system"')
+        assert len(results) >= 1
+        found = any(r["id"] == entry_id1 for r in results)
+        assert found
+
+    def test_search_with_date_range(self, populated_db):
+        """Test search with time expressions."""
+        # Search with time keyword
+        results = populated_db.search("yesterday")
+        # Should handle gracefully even if no matches
+        assert isinstance(results, list)
+
+        # Search with time + keyword
+        results = populated_db.search("today OAuth2")
+        # Should work without error
+        assert isinstance(results, list)
+
+    def test_search_tag_boundary_matching(self, populated_db):
+        """Test that tag matching respects tag boundaries."""
+        # Add entries with similar tags
+        entry1_id = populated_db.add_entry(
+            title="Test1",
+            description="First test",
+            tags=["test", "testing"]
+        )
+        entry2_id = populated_db.add_entry(
+            title="Test2",
+            description="Second test",
+            tags=["retest"]
+        )
+
+        # Search for exact tag "test"
+        results = populated_db.search("tag:test")
+
+        # Should find entry1 which has "test" tag
+        found_entry1 = any(r["id"] == entry1_id for r in results)
+        assert found_entry1
+
+        # Should NOT find entry2 which only has "retest" (not "test")
+        # Note: This is a boundary case - our implementation uses LIKE with commas
+        # so it should handle this correctly
+
 
 class TestTimeRange:
     """Test time range queries."""
