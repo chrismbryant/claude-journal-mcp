@@ -28,7 +28,9 @@ function loadState() {
       return JSON.parse(data);
     }
   } catch (error) {
-    console.error(`Warning: Failed to load state: ${error.message}`);
+    console.error(`⚠️  Failed to load state: ${error.message}`);
+    console.error(`   State file: ${STATE_FILE}`);
+    console.error(`   Initializing with default state...`);
   }
 
   return {
@@ -48,8 +50,11 @@ function saveState(state) {
     }
 
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), 'utf8');
+    return true;
   } catch (error) {
-    console.error(`Warning: Failed to save state: ${error.message}`);
+    console.error(`⚠️  Failed to save state: ${error.message}`);
+    console.error(`   State file: ${STATE_FILE}`);
+    return false;
   }
 }
 
@@ -71,6 +76,9 @@ function main() {
   const now = Date.now();
   const elapsed = now - state.lastCapture;
 
+  // Log hook execution (for debugging)
+  console.log('📊 Journal auto-capture hook running');
+
   // Increment message count
   state.messageCount++;
 
@@ -87,6 +95,7 @@ function main() {
   );
 
   if (shouldCapture) {
+    console.log('');
     console.log('🕐 Journal auto-capture triggered');
     console.log(`   ${state.messageCount} messages exchanged since last capture`);
     if (state.lastProject) {
@@ -98,6 +107,9 @@ function main() {
     console.log('   - Summarize what was accomplished');
     console.log('   - Use journal_auto_capture with a brief summary');
     console.log('');
+    console.log('⚠️  Claude: You MUST respond to this trigger, even if you decide not to capture.');
+    console.log('   Either create a journal entry OR explain why you\'re not capturing.');
+    console.log('');
 
     // Reset state
     state.lastCapture = now;
@@ -105,7 +117,10 @@ function main() {
   }
 
   // Save updated state
-  saveState(state);
+  const saved = saveState(state);
+  if (!saved) {
+    console.error('⚠️  Failed to save auto-capture state. Next trigger may be incorrect.');
+  }
 }
 
 // Run

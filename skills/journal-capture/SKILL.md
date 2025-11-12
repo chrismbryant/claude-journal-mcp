@@ -125,15 +125,20 @@ When you see a message from the auto-capture hook:
    - Summarize the goal (what we were trying to do)
    - Summarize what was accomplished
    - Use journal_auto_capture with a brief summary
+
+⚠️  Claude: You MUST respond to this trigger, even if you decide not to capture.
+   Either create a journal entry OR explain why you're not capturing.
 ```
 
-**Respond by:**
-1. Analyzing the conversation since the last capture
-2. Identifying the main goal or objective discussed
-3. Summarizing what was accomplished or decided
-4. Calling `journal_auto_capture` with an appropriate title and description
+**You MUST respond to this trigger every time.** Follow these steps:
 
-If nothing significant happened (just trivial Q&A), you can acknowledge the hook but explain that there's nothing substantial to capture.
+1. **Acknowledge the trigger** - Let the user know you saw the auto-capture signal
+2. **Analyze the conversation** - Review what happened since the last capture
+3. **Decide and act:**
+   - **If significant work occurred:** Call `journal_auto_capture` with an appropriate title and description
+   - **If nothing substantial happened:** Explicitly explain why you're not capturing (e.g., "Only trivial Q&A since last capture, nothing substantial to record")
+
+**IMPORTANT:** Never silently ignore the hook trigger. The user needs visibility into your decision-making process, even if you decide not to capture.
 
 ## Benefits
 

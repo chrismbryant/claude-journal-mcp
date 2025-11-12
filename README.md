@@ -399,9 +399,10 @@ The hook is defined in `hooks/hooks.json` and automatically enabled:
 ```
 
 **Behavior:**
-- Runs on every user prompt submission
+- Runs on every user prompt submission with visible logging (`📊 Journal auto-capture hook running`)
 - Low overhead (checks timestamp and counter)
 - When threshold reached (30 min or 3+ messages), prompts Claude to analyze the session
+- **Claude must respond** - either creates a journal entry OR explains why not capturing
 - Claude reviews the conversation and creates a meaningful journal entry with:
   - Goal (what we were trying to do)
   - Accomplishments (what was done)
