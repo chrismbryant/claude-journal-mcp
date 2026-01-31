@@ -18,7 +18,6 @@
     "auto-capture"
   ],
   "license": "MIT",
-  "hooks": "./hooks/hooks.json",
   "mcpServers": {
     "journal": {
       "command": "python",
